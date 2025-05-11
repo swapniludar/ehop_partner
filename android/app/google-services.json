@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1037891053876",
+    "project_id": "ehop-backend",
+    "storage_bucket": "ehop-backend.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1037891053876:android:26618a34dc7e3ef3261d61",
+        "android_client_info": {
+          "package_name": "com.example.ehop_partner"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCzh0bNOuazf3_Ql77uqVfX9sQQG9Fox3s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1037891053876:android:ddbf9fc398d1ad43261d61",
+        "android_client_info": {
+          "package_name": "in.ehop.ehop_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCzh0bNOuazf3_Ql77uqVfX9sQQG9Fox3s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

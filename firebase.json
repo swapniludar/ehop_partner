@@ -1,0 +1,23 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "ehop-backend",
+          "appId": "1:1037891053876:android:26618a34dc7e3ef3261d61",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "ehop-backend",
+          "configurations": {
+            "android": "1:1037891053876:android:26618a34dc7e3ef3261d61",
+            "ios": "1:1037891053876:ios:d392f0350b96967c261d61",
+            "web": "1:1037891053876:web:81c2e3621b353288261d61"
+          }
+        }
+      }
+    }
+  }
+}
