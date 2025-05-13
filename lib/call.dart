@@ -1,12 +1,22 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ehop_partner/comm/signaling.dart';
 import 'package:ehop_partner/firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
+
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  print('Handling a background message: ${message.messageId}');
+}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
   runApp(MaterialApp(home: MyApp()));
 }
 
@@ -38,6 +48,8 @@ class MyHomePageState extends State<MyHomePage> {
   String? roomId;
   TextEditingController textEditingController = TextEditingController(text: '');
 
+  String? _token = 'Fetching...';
+
   @override
   void initState() {
     _localRenderer.initialize();
@@ -49,6 +61,48 @@ class MyHomePageState extends State<MyHomePage> {
     });
 
     super.initState();
+    _initFCM();
+  }
+
+  Future<void> _initFCM() async {
+    QuerySnapshot<Map<String, dynamic>> querySnapshot =
+    await FirebaseFirestore.instance
+        .collection('partners')
+        .where('emailAddress', isEqualTo: "dhanashri.udar@gmail.com")
+        .get();
+
+    if (querySnapshot.docs.isNotEmpty) {
+      final doc = querySnapshot.docs.first;
+      final data = doc.data();
+      if (!data.containsKey('fcmToken')) {
+        FirebaseMessaging messaging = FirebaseMessaging.instance;
+        String? token = await messaging.getToken();
+        print('FCM Token: $token');
+        await doc.reference.update({'fcmToken': token});
+        print('fcmToken added to Firestore.');
+      } else {
+        print('fcmToken already exists.');
+      }
+    } else {
+      print('No user found with that email address.');
+    }
+
+    // Foreground message handler
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      print('Foreground message: ${message.notification?.title}');
+    });
+
+    // When app is opened from a terminated state
+    FirebaseMessaging.instance.getInitialMessage().then((message) {
+      if (message != null) {
+        print('App opened from terminated state: ${message.messageId}');
+      }
+    });
+
+    // When app is opened from background
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      print('App opened from background: ${message.messageId}');
+    });
   }
 
   @override
