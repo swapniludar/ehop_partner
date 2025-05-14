@@ -66,10 +66,10 @@ class MyHomePageState extends State<MyHomePage> {
 
   Future<void> _initFCM() async {
     QuerySnapshot<Map<String, dynamic>> querySnapshot =
-    await FirebaseFirestore.instance
-        .collection('partners')
-        .where('emailAddress', isEqualTo: "dhanashri.udar@gmail.com")
-        .get();
+        await FirebaseFirestore.instance
+            .collection('partners')
+            .where('emailAddress', isEqualTo: "dhanashri.udar@gmail.com")
+            .get();
 
     if (querySnapshot.docs.isNotEmpty) {
       final doc = querySnapshot.docs.first;
@@ -89,7 +89,12 @@ class MyHomePageState extends State<MyHomePage> {
 
     // Foreground message handler
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      print('Foreground message: ${message.notification?.title}');
+      print('Foreground message: ${message.data}');
+      String roomId = message.data['roomId'];
+      String callerId = message.data['callerId'];
+      print('Received room id: ${roomId}');
+      signaling.openUserMedia(_localRenderer, _remoteRenderer);
+      signaling.joinRoom(roomId, _remoteRenderer);
     });
 
     // When app is opened from a terminated state
