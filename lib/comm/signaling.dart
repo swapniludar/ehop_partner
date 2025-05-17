@@ -28,10 +28,12 @@ class Signaling {
 
   StreamStateCallback? onAddRemoteStream;
 
+  final String dbCollection = 'call_rooms';
+
   Future<void> joinRoom(String roomId, RTCVideoRenderer remoteVideo) async {
     FirebaseFirestore db = FirebaseFirestore.instance;
     print(roomId);
-    DocumentReference roomRef = db.collection('rooms').doc('$roomId');
+    DocumentReference roomRef = db.collection(dbCollection).doc('$roomId');
     var roomSnapshot = await roomRef.get();
     print('Got room ${roomSnapshot.exists}');
 
@@ -138,7 +140,7 @@ class Signaling {
 
     if (roomId != null) {
       var db = FirebaseFirestore.instance;
-      var roomRef = db.collection('rooms').doc(roomId);
+      var roomRef = db.collection(dbCollection).doc(roomId);
       var calleeCandidates = await roomRef.collection('calleeCandidates').get();
       calleeCandidates.docs.forEach((document) => document.reference.delete());
 

@@ -26,10 +26,12 @@ class Signaling {
   RTCDataChannel? receivedChannel;
   MessageStateCallback? onMessageReceived;
 
+  final String dbCollection = 'chat_rooms';
+
   Future<void> joinRoom(String roomId) async {
     FirebaseFirestore db = FirebaseFirestore.instance;
     print(roomId);
-    DocumentReference roomRef = db.collection('rooms').doc('$roomId');
+    DocumentReference roomRef = db.collection(dbCollection).doc('$roomId');
     var roomSnapshot = await roomRef.get();
     print('Got room ${roomSnapshot.exists}');
 

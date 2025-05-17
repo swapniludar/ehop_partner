@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:ehop_partner/call.dart';
 import 'package:ehop_partner/comm/chat_signaling.dart';
 import 'package:ehop_partner/firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -128,7 +129,7 @@ class ChatPageState extends State<ChatPage> {
   Future<void> _call() async {
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => const ChatPage()),
+      MaterialPageRoute(builder: (context) => const CallInitiatePage()),
     );
   }
 
