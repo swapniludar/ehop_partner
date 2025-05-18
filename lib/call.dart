@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ehop_partner/comm/signaling.dart';
-import 'package:ehop_partner/firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -23,14 +22,39 @@ class CallInitiatePageState extends State<CallInitiatePage> {
   final RTCVideoRenderer _localRenderer = RTCVideoRenderer();
   final RTCVideoRenderer _remoteRenderer = RTCVideoRenderer();
   String? roomId;
+  bool callJoined = false;
   TextEditingController textEditingController = TextEditingController(text: '');
-
   String? _token = 'Fetching...';
 
   @override
   void initState() {
     _localRenderer.initialize();
     _remoteRenderer.initialize();
+
+    _localRenderer.onFirstFrameRendered = () {
+      print('Received room id $roomId in onFirstFrameRendered');
+      if (callJoined) {
+        print("Call already joined");
+      } else {
+        signaling.joinRoom(roomId!, _remoteRenderer);
+        callJoined = true;
+        print("Call joined");
+      }
+    };
+
+    _localRenderer.onResize = () async {
+      print('Received room id $roomId in onResize');
+      if (callJoined) {
+        print("Call already joined");
+      } else {
+        if (_localRenderer.videoWidth > 0 && _localRenderer.videoHeight > 0) {
+          print("✅ First frame likely rendered (via onResize)");
+          signaling.joinRoom(roomId!, _remoteRenderer);
+          callJoined = true;
+          print("Call joined");
+        }
+      }
+    };
 
     signaling.onAddRemoteStream = ((stream) {
       _remoteRenderer.srcObject = stream;
@@ -67,11 +91,12 @@ class CallInitiatePageState extends State<CallInitiatePage> {
     // Foreground message handler
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       print('Foreground message: ${message.data}');
-      String roomId = message.data['roomId'];
       String callerId = message.data['callerId'];
       print('Received room id: ${roomId}');
       signaling.openUserMedia(_localRenderer, _remoteRenderer);
-      signaling.joinRoom(roomId, _remoteRenderer);
+      setState(() {
+        roomId = message.data['roomId'];
+      });
     });
 
     // When app is opened from a terminated state
@@ -106,24 +131,6 @@ class CallInitiatePageState extends State<CallInitiatePage> {
             children: [
               ElevatedButton(
                 onPressed: () {
-                  signaling.openUserMedia(_localRenderer, _remoteRenderer);
-                },
-                child: Text("Open camera & microphone"),
-              ),
-              SizedBox(width: 8),
-              ElevatedButton(
-                onPressed: () {
-                  // Add roomId
-                  signaling.joinRoom(
-                    textEditingController.text.trim(),
-                    _remoteRenderer,
-                  );
-                },
-                child: Text("Join room"),
-              ),
-              SizedBox(width: 8),
-              ElevatedButton(
-                onPressed: () {
                   signaling.hangUp(_localRenderer);
                 },
                 child: Text("Hangup"),
@@ -143,19 +150,6 @@ class CallInitiatePageState extends State<CallInitiatePage> {
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text("Join the following Room: "),
-                Flexible(
-                  child: TextFormField(controller: textEditingController),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: 8),
         ],
       ),
     );

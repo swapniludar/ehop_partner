@@ -143,56 +143,53 @@ class ChatPageState extends State<ChatPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text("Demonstrate peer to peer audio & Video all")),
-      body: IgnorePointer(
-        ignoring: !_isBodyEnabled,
-        child: Column(
-          children: [
-            SizedBox(height: 8),
-            Expanded(
-              child: ListView.builder(
-                itemCount: _messages.length,
-                itemBuilder: (context, index) {
-                  final msg = _messages[index];
-                  return Align(
-                    alignment:
-                        msg.isSentByMe
-                            ? Alignment.centerRight
-                            : Alignment.centerLeft,
-                    child: Container(
-                      padding: EdgeInsets.all(10),
-                      margin: EdgeInsets.symmetric(vertical: 4),
-                      decoration: BoxDecoration(
-                        color: msg.isSentByMe ? Colors.blue : Colors.grey,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(msg.msg),
+      body: Column(
+        children: [
+          SizedBox(height: 8),
+          Expanded(
+            child: ListView.builder(
+              itemCount: _messages.length,
+              itemBuilder: (context, index) {
+                final msg = _messages[index];
+                return Align(
+                  alignment:
+                      msg.isSentByMe
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
+                  child: Container(
+                    padding: EdgeInsets.all(10),
+                    margin: EdgeInsets.symmetric(vertical: 4),
+                    decoration: BoxDecoration(
+                      color: msg.isSentByMe ? Colors.blue : Colors.grey,
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                  );
-                },
-              ),
+                    child: Text(msg.msg),
+                  ),
+                );
+              },
             ),
-            Divider(height: 1),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _controller,
-                      decoration: InputDecoration(
-                        hintText: "Type a message...",
-                        border: OutlineInputBorder(),
-                      ),
+          ),
+          Divider(height: 1),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    decoration: InputDecoration(
+                      hintText: "Type a message...",
+                      border: OutlineInputBorder(),
                     ),
                   ),
-                  SizedBox(width: 8),
-                  ElevatedButton(onPressed: _sendMessage, child: Text("Send")),
-                  ElevatedButton(onPressed: _call, child: Text("Call")),
-                ],
-              ),
+                ),
+                SizedBox(width: 8),
+                ElevatedButton(onPressed: _sendMessage, child: Text("Send")),
+                ElevatedButton(onPressed: _call, child: Text("Call")),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
