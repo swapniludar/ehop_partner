@@ -1,17 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ehop_partner/comm/signaling.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'package:synchronized/synchronized.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
-  print('Handling a background message: ${message.messageId}');
-}
-
 class CallInitiatePage extends StatefulWidget {
-  const CallInitiatePage({super.key});
+  final String roomId;
+
+  const CallInitiatePage({super.key, required this.roomId});
 
   @override
   CallInitiatePageState createState() => CallInitiatePageState();
@@ -24,36 +21,40 @@ class CallInitiatePageState extends State<CallInitiatePage> {
   String? roomId;
   bool callJoined = false;
   TextEditingController textEditingController = TextEditingController(text: '');
-  String? _token = 'Fetching...';
+  final _lock = Lock();
 
   @override
   void initState() {
     _localRenderer.initialize();
     _remoteRenderer.initialize();
 
-    _localRenderer.onFirstFrameRendered = () {
-      print('Received room id $roomId in onFirstFrameRendered');
-      if (callJoined) {
-        print("Call already joined");
-      } else {
-        signaling.joinRoom(roomId!, _remoteRenderer);
-        callJoined = true;
-        print("Call joined");
-      }
-    };
-
-    _localRenderer.onResize = () async {
-      print('Received room id $roomId in onResize');
-      if (callJoined) {
-        print("Call already joined");
-      } else {
-        if (_localRenderer.videoWidth > 0 && _localRenderer.videoHeight > 0) {
-          print("✅ First frame likely rendered (via onResize)");
+    _localRenderer.onFirstFrameRendered = () async {
+      await _lock.synchronized(() async {
+        print('Received room id $roomId in onFirstFrameRendered');
+        if (callJoined) {
+          print("Call already joined");
+        } else {
           signaling.joinRoom(roomId!, _remoteRenderer);
           callJoined = true;
           print("Call joined");
         }
-      }
+      });
+    };
+
+    _localRenderer.onResize = () async {
+      await _lock.synchronized(() async {
+        print('Received room id $roomId in onResize');
+        if (callJoined) {
+          print("Call already joined");
+        } else {
+          if (_localRenderer.videoWidth > 0 && _localRenderer.videoHeight > 0) {
+            print("✅ First frame likely rendered (via onResize)");
+            signaling.joinRoom(roomId!, _remoteRenderer);
+            callJoined = true;
+            print("Call joined");
+          }
+        }
+      });
     };
 
     signaling.onAddRemoteStream = ((stream) {
@@ -62,6 +63,7 @@ class CallInitiatePageState extends State<CallInitiatePage> {
     });
 
     super.initState();
+    _initRoomIdFromWidgetAndOpenUserMedia();
     _initFCM();
   }
 
@@ -93,10 +95,11 @@ class CallInitiatePageState extends State<CallInitiatePage> {
       print('Foreground message: ${message.data}');
       String callerId = message.data['callerId'];
       print('Received room id: ${roomId}');
-      signaling.openUserMedia(_localRenderer, _remoteRenderer);
-      setState(() {
-        roomId = message.data['roomId'];
-      });
+      // signaling.openUserMedia(_localRenderer, _remoteRenderer);
+      // setState(() {
+      //   roomId = message.data['roomId'];
+      // });
+      _initRoomIdFromFCMAndOpenUserMedia(message.data['roomId']);
     });
 
     // When app is opened from a terminated state
@@ -109,6 +112,28 @@ class CallInitiatePageState extends State<CallInitiatePage> {
     // When app is opened from background
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       print('App opened from background: ${message.messageId}');
+    });
+  }
+
+  _initRoomIdFromWidgetAndOpenUserMedia() async {
+    await _lock.synchronized(() async {
+      if (roomId == null && widget.roomId.isNotEmpty) {
+        signaling.openUserMedia(_localRenderer, _remoteRenderer);
+        setState(() {
+          roomId = widget.roomId;
+        });
+      }
+    });
+  }
+
+  _initRoomIdFromFCMAndOpenUserMedia(String roomIdFromFCM) async {
+    await _lock.synchronized(() async {
+      if (roomId == null && widget.roomId.isEmpty) {
+        signaling.openUserMedia(_localRenderer, _remoteRenderer);
+        setState(() {
+          roomId = roomIdFromFCM;
+        });
+      }
     });
   }
 

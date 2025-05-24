@@ -6,6 +6,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 
+@pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
   print('Handling a background message: ${message.messageId}');
@@ -14,9 +15,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-
   runApp(MaterialApp(home: PartnerCommunicationApp()));
 }
 
@@ -47,8 +46,6 @@ class ChatPageState extends State<ChatPage> {
   TextEditingController textEditingController = TextEditingController(text: '');
   bool _isBodyEnabled = false;
 
-  String? _token = 'Fetching...';
-
   final TextEditingController _controller = TextEditingController();
   final List<ChatMessage> _messages = [];
 
@@ -62,6 +59,29 @@ class ChatPageState extends State<ChatPage> {
 
     super.initState();
     _initFCM();
+    setupInteractedMessage();
+  }
+
+  Future<void> setupInteractedMessage() async {
+    RemoteMessage? initialMessage =
+        await FirebaseMessaging.instance.getInitialMessage();
+
+    if (initialMessage != null) {
+      _handleMessage(initialMessage);
+    }
+
+    FirebaseMessaging.onMessageOpenedApp.listen(_handleMessage);
+  }
+
+  void _handleMessage(RemoteMessage message) {
+    final String roomIdFromBg = message.data['roomId'];
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CallInitiatePage(roomId: roomIdFromBg),
+      ),
+    );
   }
 
   Future<void> _initFCM() async {
@@ -90,11 +110,22 @@ class ChatPageState extends State<ChatPage> {
     // Foreground message handler
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       print('Foreground message: ${message.data}');
-      String roomId = message.data['roomId'];
-      String callerId = message.data['callerId'];
-      print('Received room id: ${roomId}');
-      signaling.joinRoom(roomId);
-      _toggleBody();
+      if ("call" == message.data['type']) {
+        final String roomIdFromFCM = message.data['roomId'];
+        print('Received room id: ${roomIdFromFCM}');
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CallInitiatePage(roomId: roomIdFromFCM),
+          ),
+        );
+      } else {
+        String roomId = message.data['roomId'];
+        String callerId = message.data['callerId'];
+        print('Received room id: ${roomId}');
+        signaling.joinRoom(roomId);
+        _toggleBody();
+      }
     });
 
     // When app is opened from a terminated state
@@ -129,7 +160,9 @@ class ChatPageState extends State<ChatPage> {
   Future<void> _call() async {
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => const CallInitiatePage()),
+      MaterialPageRoute(
+        builder: (context) => const CallInitiatePage(roomId: ''),
+      ),
     );
   }
 
